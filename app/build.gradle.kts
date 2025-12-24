@@ -1,13 +1,10 @@
 @file:Suppress("UnstableApiUsage")
 
-import com.android.build.gradle.tasks.PackageAndroidArtifact
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 val keystorePropertiesFile: File = rootProject.file("keystore.properties")
@@ -17,17 +14,11 @@ val keystoreProperties = if (keystorePropertiesFile.exists() && keystoreProperti
     }
 } else null
 
-fun String.execute(currentWorkingDir: File = file("./")): String {
-    val byteOut = ByteArrayOutputStream()
-    project.exec {
-        workingDir = currentWorkingDir
-        commandLine = split("\\s".toRegex())
-        standardOutput = byteOut
-    }
-    return String(byteOut.toByteArray()).trim()
+val versionName = "1.0"
+val gitCommitCount = run {
+    val process = Runtime.getRuntime().exec(arrayOf("git", "rev-list", "--count", "HEAD"))
+    process.inputStream.bufferedReader().use { it.readText().trim().toInt() }
 }
-
-val gitCommitCount = "git rev-list HEAD --count".execute().toInt()
 
 android {
     namespace = "io.github.a13e300.ksuwebui"
@@ -49,8 +40,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = gitCommitCount
-        versionName = "1.0"
-        setProperty("archivesBaseName", "KsuWebUI-$versionName-$versionCode")
+        versionName = versionName
     }
 
     buildTypes {
@@ -68,13 +58,10 @@ android {
             }
         }
     }
+
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
-    }
-    // https://stackoverflow.com/a/77745844
-    tasks.withType<PackageAndroidArtifact> {
-        doFirst { appMetadata.asFile.orNull?.writeText("") }
     }
     androidResources {
         generateLocaleConfig = true
@@ -82,11 +69,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
-    }
-    kotlin {
-        jvmToolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
     }
     buildFeatures {
         buildConfig = true
@@ -97,6 +79,14 @@ android {
             excludes += "**"
         }
     }
+    compileSdkMinor = 1
+    buildToolsVersion = "36.1.0"
+}
+
+base {
+    archivesName.set(
+        "KsuWebUI-${versionName}-${gitCommitCount}-$name"
+    )
 }
 
 dependencies {
