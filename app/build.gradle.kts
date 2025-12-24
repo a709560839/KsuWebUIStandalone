@@ -71,6 +71,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
+        aidl = true
         buildConfig = true
         viewBinding = true
     }
@@ -101,4 +102,6 @@ dependencies {
     implementation(libs.com.github.topjohnwu.libsu.core)
     implementation(libs.com.github.topjohnwu.libsu.service)
     implementation(libs.com.github.topjohnwu.libsu.io)
+
+    implementation(libs.dev.rikka.rikkax.parcelablelist)
 }
