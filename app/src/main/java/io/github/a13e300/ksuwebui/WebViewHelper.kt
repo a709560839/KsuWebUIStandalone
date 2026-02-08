@@ -83,7 +83,9 @@ fun WebUIActivity.initWebView(fs: FileSystemManager, state: WebUIState) {
     }
 
     state.webView?.apply {
-        addJavascriptInterface(WebViewInterface(state), "ksu")
+        val webviewInterface = WebViewInterface(state)
+        state.webviewInterface = webviewInterface
+        addJavascriptInterface(webviewInterface, "ksu")
         setWebViewClient(webViewClient)
         webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
