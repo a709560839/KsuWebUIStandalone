@@ -10,4 +10,5 @@ class WebUIState {
     var insets: Insets = Insets(0, 0, 0, 0)
     var isEdgeToEdgeEnabled = false
     var filePathCallback: android.webkit.ValueCallback<Array<android.net.Uri>>? = null
+    var onSaveFileRequest: ((ByteArray, String, String) -> Unit)? = null
 }

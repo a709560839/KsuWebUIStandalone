@@ -29,6 +29,8 @@ class WebUIActivity : ComponentActivity(), FileSystemService.Listener {
     
     private val webUIState = WebUIState()
     internal lateinit var fileChooserLauncher: ActivityResultLauncher<Intent>
+    private lateinit var saveFileLauncher: ActivityResultLauncher<Intent>
+    private var pendingSaveData: ByteArray? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +67,41 @@ class WebUIActivity : ComponentActivity(), FileSystemService.Listener {
             }
             webUIState.filePathCallback?.onReceiveValue(uris)
             webUIState.filePathCallback = null
+        }
+
+        saveFileLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            val uri = if (result.resultCode == RESULT_OK) result.data?.data else null
+            val data = pendingSaveData
+            if (uri != null && data != null) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        contentResolver.openOutputStream(uri)?.use { it.write(data) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        pendingSaveData = null
+                    }
+                }
+            } else {
+                pendingSaveData = null
+            }
+        }
+
+        webUIState.onSaveFileRequest = { data, fileName, mimeType ->
+            pendingSaveData = data
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = mimeType
+                putExtra(Intent.EXTRA_TITLE, fileName)
+            }
+            try {
+                saveFileLauncher.launch(intent)
+            } catch (e: Exception) {
+                pendingSaveData = null
+                e.printStackTrace()
+            }
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
